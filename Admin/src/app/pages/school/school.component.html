@@ -1,0 +1,288 @@
+<div class="container-fluid">
+  <app-pagetitle title="School" ></app-pagetitle>
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <div>
+            <a href="javascript:void(0);" class="btn btn-success mb-2" (click)="resetform(); openModal(content)">
+              <i class="mdi mdi-plus mr-2"></i> Add School
+            </a>
+          </div>
+          <!-- 
+          <h4 class="card-title">Advanced Data Table</h4>
+          <p class="card-sub-title">
+            Example of datatable.
+          </p> -->
+          <div class="row mb-md-2">
+            <div class="col-sm-12 col-md-6">
+              <div class="dataTables_length" id="tickets-table_length">
+                <label class="d-inline-flex align-items-center">Show
+                  <select name="tickets-table_length" aria-controls="tickets-table" name="pageSize"
+                    (change)="itemsPerPageChange($event.target.value)"
+                    class="custom-select custom-select-sm form-control form-control-sm mx-2">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="15">15</option>
+                    <option [ngValue]="20">20</option>
+                  </select> entries</label>
+              </div>
+            </div>
+            <!-- Search -->
+            <div class="col-sm-12 col-md-6">
+              <div id="tickets-table_filter" class="dataTables_filter text-md-right">
+                Search :
+                <label
+                  class="d-inline-flex align-items-center">
+                  <input type="text" name="Name" class="form-control form-control-sm ml-2"
+                    aria-controls="tickets-table" [(ngModel)]="Name" placeholder="By Name"  (keyup)="Search(Name,City)">
+                    <input type="text" name="City" class="form-control form-control-sm ml-2"
+                    aria-controls="tickets-table" [(ngModel)]="City" placeholder="By City"  (keyup)="Search(Name,City)">
+                  </label>
+            </div>
+           
+        </div>
+            <!-- End search -->
+          </div>
+
+          <!-- Table -->
+          <div class="table-responsive">
+            <table id="basic-datatable"
+              class="table table-bordered dt-responsive nowrap datatables no-footer dtr-inline">
+              <thead>
+                <tr>
+                  <th sortable="Name" (click)="onSort('Name','asce')">Name</th>
+                  <th sortable="StreetAddress1" (click)="onSort('StreetAddress1','asce')">Street Line1</th>
+                  <!-- <th sortable="Name" (click)="onSort('Name','asce')">Street Line2</th> -->
+                  <th sortable="City" (click)="onSort('City','asce')">City</th>
+                  <th sortable="State" (click)="onSort('State','asce')">State</th>
+                  <th sortable="Zipcode" (click)="onSort('Zipcode','asce')">Zipcode</th>
+                  <th sortable="Country" (click)="onSort('Country','asce')">Country</th>
+                  <th>Location</th>
+                  <th>Actions</th>
+                  
+                </tr>
+              </thead>
+              <tbody *ngFor="let table of data ">
+                <tr>
+                  <td>{{table.Name}}</td>
+                  <td>{{table.StreetAddress1}}</td>
+                  <!-- <td>{{table.StreetAddress2}}</td> -->
+                  <td>{{table.City}}</td>
+                  <td>{{table.State}}</td>
+                  <td>{{table.Zipcode}}</td>
+                  <td>{{table.Country}}</td>
+                  <td> <a class="dropdown-item" href="javascript: void(0);" (click)="placeMarker(table.Latitude,table.Longitude);openMap(mapModal)"><i
+                    class="ri-map-pin-fill"></i>
+                  </a></td>
+                  <td>
+                    <div ngbDropdown placement="bottom-left">
+                      <i class="mdi mdi-dots-vertical dropdown-toggle" ngbDropdownToggle data-toggle="dropdown"
+                        aria-expanded="true"></i>
+                      <div class="dropdown-menu dropdown-menu-right" ngbDropdownMenu>
+                        <a class="dropdown-item" href="javascript: void(0);" (click)=" editClick(table); openModal(content)"><i
+                            class="ri-edit-fill"></i>
+                          Edit</a>
+                        <a class="dropdown-item" href="javascript: void(0);" (click)="openModal(confirmModal); DeleteSchool(table.SchoolId)"><i
+                            class="ri-delete-bin-fill"></i>
+                          Delete</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                
+              </tbody>
+            </table>
+          </div>
+          <!-- End table -->
+          <div class="row justify-content-md-between align-items-md-center mt-2">
+            <div class="col-sm-12 col-md-5">
+              <div class="dataTables_info mb-2" id="tickets-table_info" role="status" aria-live="polite">Showing
+                {{startIndex}} to
+                {{endIndex}} of {{totalschoolCount}}
+                entries
+              </div>
+            </div>
+            <!-- Pagination -->
+            <div class="col-sm-12 col-md-5">
+              <div class="text-md-right float-md-right pagination-rounded">
+                <ngb-pagination [collectionSize]="totalschoolCount" [(page)]="PageIndex" [pageSize]="pageSize" (pageChange)="pageChange($event)">
+                  <ng-template ngbPaginationPrevious>Prev</ng-template>
+                  <ng-template ngbPaginationNext>Next</ng-template>
+                  <ng-template ngbPaginationNumber let-p>{{p}}
+                  </ng-template>
+                </ngb-pagination>
+              </div>
+            </div>
+            <!-- End Pagination -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contacts model  -->
+<ng-template #content role="document" let-modal="close">
+  <div class="modal-header">
+    <h5 class="modal-title">{{btnType}} School</h5>
+    <button type="button" class="close" aria-label="Close" (click)="modal('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body p-3">
+    <div class="text-left">
+      <form (ngSubmit)="saveData()" [formGroup]="validationform">
+        <input type="hidden" class="form-control" id="SchoolId" formControlName="SchoolId" value="0">
+        <div class="form-group">
+          <label for="Name">Name</label>
+          <input type="text" class="form-control" id="Name" placeholder="Enter name" formControlName="Name"
+            [ngClass]="{'is-invalid': submitted && form.Name.errors}">
+          <div *ngIf="submitted && form.Name.errors" class="invalid-feedback">
+            <span *ngIf="form.Name.errors.required">Name is mendatory.</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="StreetAddress1">Address Line1</label>
+          <input type="text" class="form-control" id="StreetAddress1" placeholder="Enter StreetAddress1"
+            formControlName="StreetAddress1" [ngClass]="{'is-invalid': submitted && form.StreetAddress1.errors}">
+          <div *ngIf="submitted && form.StreetAddress1.errors" class="invalid-feedback">
+            <span *ngIf="form.StreetAddress1.errors.required">Street Address1 is mendatory.</span>
+          </div>
+        </div>
+
+        <!-- <div class="form-group">
+          <label for="StreetAddress2">Street Address2</label>
+          <input type="text" class="form-control" id="StreetAddress2" placeholder="Enter StreetAddress2"
+            formControlName="StreetAddress2" [ngClass]="{'is-invalid': submitted && form.StreetAddress2.errors}">
+          <div *ngIf="submitted && form.StreetAddress2.errors" class="invalid-feedback">
+            <span *ngIf="form.StreetAddress2.errors.required">Street Address2 is mendatory.</span>
+          </div>
+        </div> -->
+
+        <div class="form-group">
+          <label for="City">City</label>
+          <input type="text" class="form-control" id="City" placeholder="Enter City" formControlName="City"
+            [ngClass]="{'is-invalid': submitted && form.City.errors}">
+          <div *ngIf="submitted && form.City.errors" class="invalid-feedback">
+            <span *ngIf="form.City.errors.required">City is mendatory.</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="State">State</label>
+          <input type="text" class="form-control" id="State" placeholder="Enter name" formControlName="State"
+            [ngClass]="{'is-invalid': submitted && form.State.errors}">
+          <div *ngIf="submitted && form.State.errors" class="invalid-feedback">
+            <span *ngIf="form.State.errors.required">State is mendatory.</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="Zipcode">Zipcode</label>
+          <input type="text" class="form-control" id="Zipcode" placeholder="Enter Zipcode" formControlName="Zipcode"
+            [ngClass]="{'is-invalid': submitted && form.Zipcode.errors}">
+          <div *ngIf="submitted && form.Zipcode.errors" class="invalid-feedback">
+            <span *ngIf="form.Zipcode.errors.required">Zipcode is mendatory.</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="Country">Country</label>
+          <select class="form-control" id="Country" placeholder="Enter Country" formControlName="Country"
+            [ngClass]="{'is-invalid': submitted && form.Country.errors}">
+            <option value="usa">USA</option>
+            <option value="india">India</option>
+          <div *ngIf="submitted && form.Country.errors" class="invalid-feedback">
+            <span *ngIf="form.Country.errors.required">Country is mendatory.</span>
+          </div>
+        </select>
+        </div>
+
+        <!-- <form action="/action_page.php">
+          <label for="cars">Choose a car:</label>
+          <select id="cars" name="cars">
+            <option value="volvo">Volvo</option>
+            <option value="saab">Saab</option>
+            <option value="fiat">Fiat</option>
+            <option value="audi">Audi</option>
+          </select> -->
+<div class="form-group">
+  <agm-map [latitude]="latitude" [longitude]="longitude" style="height: 200px" >
+    <agm-marker [latitude]="latitude" [longitude]="longitude" [markerDraggable]="true"
+    (dragEnd)="markerDragEnd($event)"></agm-marker>
+  </agm-map>
+
+</div>
+        
+        <!-- <div class="form-group">
+          <label for="Latitude">Latitude</label>
+          <input type="hidden" class="form-control" id="Latitude" placeholder="Enter Latitude" formControlName="Latitude"
+            [ngClass]="{'is-invalid': submitted && form.Latitude.errors}">
+          <div *ngIf="submitted && form.Latitude.errors" class="invalid-feedback">
+            <span *ngIf="form.Latitude.errors.required">Latitude is mendatory.</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="Country">Longitude</label>
+          <input type="hidden" class="form-control" id="Logitude" placeholder="Enter Longitude"
+            formControlName="Longitude" [ngClass]="{'is-invalid': submitted && form.Longitude.errors}">
+          <div *ngIf="submitted && form.Longitude.errors" class="invalid-feedback">
+            <span *ngIf="form.Longitude.errors.required">Longitude is mendatory.</span>
+          </div>
+        </div> -->
+
+        <div class="text-right">
+          <button type="submit" class="btn btn-success">{{btnType}}</button>
+          <button type="button" class="btn btn-danger ml-1" (click)="modal('close click')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>
+
+
+
+
+<!-- Confirmation model  -->
+<ng-template #confirmModal role="document" let-modal="close">
+  <div class="modal-header">
+    <h5 class="modal-title">Delete School</h5>
+    <button type="button" class="close" aria-label="Close" (click)="modal('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body p-3">
+    <div class="text-left">
+      <p>Are you sure you want to delete?</p>
+    </div>
+    <div class="text-right">
+      <button type="submit" class="btn btn-danger" (click)="Delete()">Delete</button>
+      <button type="button" class="btn btn-light ml-1" (click)="modal('close click')">Cancel</button>
+    </div>
+  </div>
+</ng-template>
+
+
+<!-- Confirmation model  -->
+<ng-template #mapModal role="document" let-modal="close">
+  <div class="modal-header">
+    <h5 class="modal-title">Location</h5>
+    <button type="button" class="close" aria-label="Close" (click)="modal('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body p-3">
+  
+    <agm-map [latitude]="latitude" [longitude]="longitude" style="height: 300px">
+      <agm-marker *ngFor="let marker of markers" [latitude]="marker.latitude" [longitude]="marker.longitude">
+      </agm-marker>
+    </agm-map>
+       
+          <div id="streetview-container">
+            <div id="streetview-map" #streetviewMap></div>
+            <div id="streetview-pano" #streetviewPano></div>
+          </div>
+         
+    <div class="text-right">
+      <button type="button" class="btn btn-light ml-1" (click)="modal('close click')">Cancel</button>
+    </div>
+  </div>
+</ng-template>

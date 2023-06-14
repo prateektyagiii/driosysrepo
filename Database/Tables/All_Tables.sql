@@ -1,0 +1,239 @@
+-- "OR_APP"."OR_M_INTEREST" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_M_INTEREST";
+
+CREATE TABLE "OR_APP"."OR_M_INTEREST" (
+	"InterestId" serial4 NOT NULL,
+	"Name" varchar(500) NULL,
+	"Category" varchar(100) NULL,
+	"Icon" varchar(500) NULL,
+	"Description" varchar(500) NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" timestamp NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" timestamp NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "OR_M_INTEREST_pkey" PRIMARY KEY ("InterestId")
+);
+
+
+-- "OR_APP"."OR_M_SCHOOL" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_M_SCHOOL";
+
+CREATE TABLE "OR_APP"."OR_M_SCHOOL" (
+	"SchoolId" serial4 NOT NULL,
+	"Name" varchar(100) NULL,
+	"StreetAddress1" varchar(500) NULL,
+	"StreetAddress2" varchar(500) NULL,
+	"City" varchar(100) NULL,
+	"State" varchar(100) NULL,
+	"Zipcode" varchar(100) NULL,
+	"Country" varchar(100) NULL,
+	"Latitude" float8 NULL,
+	"Longitude" float8 NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" timestamp NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" timestamp NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "OR_M_SCHOOL_pkey" PRIMARY KEY ("SchoolId")
+);
+
+
+-- "OR_APP"."OR_T_OTP" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_T_OTP";
+
+CREATE TABLE "OR_APP"."OR_T_OTP" (
+	"OTPID" serial4 NOT NULL,
+	"Email" varchar(100) NULL,
+	"Otp" int8 NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" date NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" date NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "OR_T_OTP_pkey" PRIMARY KEY ("OTPID")
+);
+
+
+-- "OR_APP"."OR_T_OTP_TEST" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_T_OTP_TEST";
+
+CREATE TABLE "OR_APP"."OR_T_OTP_TEST" (
+	"OtpId" serial4 NOT NULL,
+	"UserEmail" varchar(50) NULL,
+	"OneTimeToken" int4 NULL,
+	"ValidTill" timestamp NULL,
+	"ActiveFrom" timestamp NULL,
+	"CreatedDate" timestamp NULL,
+	"CreatedBy" int4 NULL,
+	"ModifiedDate" timestamp NULL,
+	"ModifiedBy" int4 NULL,
+	CONSTRAINT "OR_T_OTP_TEST_pkey" PRIMARY KEY ("OtpId")
+);
+
+
+-- "OR_APP"."OR_T_UserAuthSession" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_T_UserAuthSession";
+
+CREATE TABLE "OR_APP"."OR_T_UserAuthSession" (
+	"SessionId" bpchar(36) NOT NULL,
+	"UserCode" int4 NOT NULL,
+	"UserEmail" varchar(50) NULL,
+	"OneTimeToken" text NULL,
+	"ValidTill" timestamp NULL,
+	"ActiveFrom" timestamp NULL,
+	"CreatedDate" timestamp NULL,
+	"CreatedBy" int4 NULL,
+	"ModifiedDate" timestamp NULL,
+	"ModifiedBy" int4 NULL,
+	CONSTRAINT "OR_T_UserAuthSession_pkey" PRIMARY KEY ("SessionId")
+);
+
+
+-- "OR_APP"."OR_M_USERDETAILS" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_M_USERDETAILS";
+
+CREATE TABLE "OR_APP"."OR_M_USERDETAILS" (
+	"Userid" serial4 NOT NULL,
+	"ProfileImg" varchar(500) NULL,
+	"Firstname" varchar(100) NULL,
+	"Middlename" varchar(100) NULL,
+	"Lastname" varchar(100) NULL,
+	"Gender" varchar(50) NULL,
+	"UserEmail" varchar(100) NULL,
+	"UserPassword" varchar(500) NULL,
+	"Education" varchar(500) NULL,
+	"Bio" varchar(1000) NULL,
+	"Role" int4 NULL,
+	"SchoolId" int4 NULL,
+	"CreatedBy" varchar(500) NULL,
+	"CreatedDate" timestamp NULL,
+	"UpdateBy" varchar(500) NULL,
+	"UpdatedDate" timestamp NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT or_m_userdetails_pk PRIMARY KEY ("Userid"),
+	CONSTRAINT or_m_userdetails_fk FOREIGN KEY ("SchoolId") REFERENCES "OR_APP"."OR_M_SCHOOL"("SchoolId")
+);
+
+
+-- "OR_APP"."OR_T_TAGS" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_T_TAGS";
+
+CREATE TABLE "OR_APP"."OR_T_TAGS" (
+	"TagsId" serial4 NOT NULL,
+	"Userid" int8 NULL,
+	"InterestId" int8 NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" date NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" date NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "OR_T_TAGS_pkey" PRIMARY KEY ("TagsId"),
+	CONSTRAINT "OR_T_TAGS_InterestId_fkey" FOREIGN KEY ("InterestId") REFERENCES "OR_APP"."OR_M_INTEREST"("InterestId"),
+	CONSTRAINT or_t_tags_fk FOREIGN KEY ("Userid") REFERENCES "OR_APP"."OR_M_USERDETAILS"("Userid")
+);
+
+
+-- "OR_APP"."OR_M_EVENT" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_M_EVENT";
+
+CREATE TABLE "OR_APP"."OR_M_EVENT" (
+	"EventId" serial4 NOT NULL,
+	"Name" varchar(100) NULL,
+	"Description" varchar(500) NULL,
+	"Userid" int8 NULL,
+	"InterestId" int8 NULL,
+	"PublicEvent" bool NULL,
+	"Capacity" int4 NULL,
+	"EventTime" date NULL,
+	"StreetAddress1" varchar(100) NULL,
+	"StreetAddress2" varchar(100) NULL,
+	"City" varchar(100) NULL,
+	"State" varchar(100) NULL,
+	"Zipcode" varchar(100) NULL,
+	"Country" varchar(100) NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" date NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" date NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "OR_M_EVENT_pkey" PRIMARY KEY ("EventId"),
+	CONSTRAINT "OR_M_EVENT_InterestId_fkey" FOREIGN KEY ("InterestId") REFERENCES "OR_APP"."OR_M_INTEREST"("InterestId"),
+	CONSTRAINT or_m_event_fk FOREIGN KEY ("Userid") REFERENCES "OR_APP"."OR_M_USERDETAILS"("Userid")
+);
+
+
+-- "OR_APP"."OR_T_GROUPCHAT" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_T_GROUPCHAT";
+
+CREATE TABLE "OR_APP"."OR_T_GROUPCHAT" (
+	"GroupchatId" serial4 NOT NULL,
+	"Userid" int8 NULL,
+	"EventId" int8 NULL,
+	"Message" varchar(1000) NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" date NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" date NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "OR_T_GROUPCHAT_pkey" PRIMARY KEY ("GroupchatId"),
+	CONSTRAINT "OR_T_GROUPCHAT_EventId_fkey" FOREIGN KEY ("EventId") REFERENCES "OR_APP"."OR_M_EVENT"("EventId"),
+	CONSTRAINT or_t_groupchat_fk FOREIGN KEY ("Userid") REFERENCES "OR_APP"."OR_M_USERDETAILS"("Userid")
+);
+
+
+-- "OR_APP"."OR_T_USEREVENT" definition
+
+-- Drop table
+
+-- DROP TABLE "OR_APP"."OR_T_USEREVENT";
+
+CREATE TABLE "OR_APP"."OR_T_USEREVENT" (
+	"UserEventId" serial4 NOT NULL,
+	"Userid" int8 NULL,
+	"EventId" int8 NULL,
+	"Status" bool NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" date NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" date NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "OR_T_USEREVENT_pkey" PRIMARY KEY ("UserEventId"),
+	CONSTRAINT "OR_T_USEREVENT_EventId_fkey" FOREIGN KEY ("EventId") REFERENCES "OR_APP"."OR_M_EVENT"("EventId"),
+	CONSTRAINT or_t_userevent_fk FOREIGN KEY ("Userid") REFERENCES "OR_APP"."OR_M_USERDETAILS"("Userid")
+);

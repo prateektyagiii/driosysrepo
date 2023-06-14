@@ -1,0 +1,74 @@
+<div class="container-fluid">
+    <app-pagetitle title="Event Detail"></app-pagetitle>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-sm">
+
+                        <tr>
+                            <th>Creator Name: </th>
+                            <td>
+                                <div> <img [src]="data.CreatorImg" width="60px" height="60px" alt="User Image"
+                                        > {{data.EventCreatedName}}</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Event Name: </th>
+                            <td>{{data.Name}}</td>
+                        </tr>
+                        <tr>
+                            <th>Event Description: </th>
+                            <td>{{data.Description}}</td>
+                        </tr>
+                        <tr>
+                            <th>Event Time:</th>
+                            <td>
+                                <!-- {{data.EventTime }} -->
+                                {{data.EventTime +'Z' | date:'MMM dd yyyy hh:mm:ss a'}}
+                                {{timezone}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Public Event:</th>
+                            <td> <input type="checkbox" id="toggle-button-checkbox"
+                                    [checked]="data.PublicEvent == true"></td>
+                        </tr>
+
+                    </table>
+                    <br>
+                    <h5 class="page-title-box mb-0">Participated User List</h5>
+                    <!-- participated user grid -->
+                    <div class="table-responsive">
+                        <table id="basic-datatable"
+                            class="table table-bordered dt-responsive nowrap datatables no-footer dtr-inline">
+                            <thead>
+                                <tr>
+                                    <th class="col-2"></th>
+                                    <th class="col-5">Name</th>
+                                </tr>
+                            </thead>
+                            <tbody *ngFor="let EventDetailModel of data.users">
+                                <tr>
+                                    <td class="col-2">
+                                        <div *ngIf="EventDetailModel.ProfileImg"> <img
+                                                [src]="EventDetailModel.ProfileImg" width="60px" height="60px"
+                                                alt="User Image"></div>
+                                    </td>
+                                    <td class="col-5">{{EventDetailModel.ParticipateName}}</td>
+                                </tr>
+                            </tbody>
+                            
+                            <tbody *ngIf="data.users.length == 0">
+                                <tr align="center">
+                                    <td colspan="2">No User Founded!!</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

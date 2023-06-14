@@ -1,0 +1,1598 @@
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_EVENT_REQUEST_LIST"(p_eventid integer)
+ RETURNS TABLE("JoinUser" bigint, "Status" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+		
+return QUERY
+select
+	ome ."Userid",
+	ome."EventId",
+	--ome."Name",
+	
+	oue."Userid" as "JoinUser",
+	oue."Status"
+from
+	"OR_APP"."OR_M_EVENT" ome
+join "OR_APP"."OR_T_USEREVENT" oue 
+on
+	ome."EventId" = oue."EventId"
+where
+	(ome."EventId" = p_eventid) and (ome."PublicEvent" = false and oue."Status"= false)
+	and ome."IsDeleted" = false;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_DELETE"(p_eventid integer DEFAULT 0, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+UPDATE "OR_APP"."OR_M_EVENT" 
+SET  "IsDeleted"=NOT(COALESCE(p_isdeleted, "IsDeleted"))
+WHERE "EventId"=p_eventid
+RETURNING "EventId" into p_eventid;
+return p_eventid;
+
+
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_DETAIL"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("EventId" integer, "Name" character varying, "Description" character varying, "Userid" bigint, "InterestId" bigint, "PublicEvent" boolean, "Capacity" integer, "EventTime" timestamp without time zone, "StreetAddress1" character varying, "StreetAddress2" character varying, "City" character varying, "State" character varying, "Zipcode" character varying, "Country" character varying, "ParticipatedId" bigint, "Status" boolean, "ParticipateName" text)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	
+	return QUERY
+	select
+	ome."EventId",
+	ome."Name",
+	ome."Description",
+	ome."Userid",
+	--CONCAT("ome.'Firstname'", ' ' , "ome.'Middlename'", ' ', "ome.'Lastname'" )as "EventCreatedName",
+	ome."InterestId",
+	ome."PublicEvent",
+	ome."Capacity",
+	ome."EventTime",
+	ome."StreetAddress1",
+	ome."StreetAddress2",
+	ome."City",
+	ome."State",
+	ome."Zipcode",
+	ome."Country",
+	otu."Userid" as "ParticipatedId",
+	otu."Status" ,
+	CONCAT("Firstname", ' ' , "Middlename", ' ', "Lastname" )as "ParticipateName"
+from
+	"OR_APP"."OR_M_EVENT" ome
+join "OR_APP"."OR_T_USEREVENT" otu on
+	ome."EventId" = otu."EventId"
+join "OR_APP"."OR_M_USERDETAILS" omu on
+	otu."Userid" = omu."Userid"
+where
+	ome."EventId" = p_id and otu."Status"=true and ome."IsDeleted" = false;
+
+end;
+
+$function$
+;
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_GETALL"(p_pagenumber integer DEFAULT 1, p_pagesize integer DEFAULT 5, p_name text DEFAULT ''::text, p_city text DEFAULT ''::text)
+ RETURNS TABLE("EventId" integer, "Name" character varying, "Description" character varying, "Userid" bigint, "InterestId" bigint, "PublicEvent" boolean, "Capacity" integer, "EventTime" timestamp without time zone, "StreetAddress1" character varying, "StreetAddress2" character varying, "City" character varying, "State" character varying, "Zipcode" character varying, "Country" character varying, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+
+
+begin
+	    return QUERY
+select
+	ome."EventId",
+	ome."Name", 
+	ome."Description",
+	ome."Userid",
+	ome."InterestId",
+	ome."PublicEvent",
+	ome."Capacity",
+	ome."EventTime",
+	ome."StreetAddress1", 
+	ome."StreetAddress2",
+	ome."City", 
+	ome."State",
+	ome."Zipcode", 
+	ome."Country", 
+	ome."CreatedBy", 
+	ome."CreatedDate", 
+	ome."UpdateBy",
+	ome."UpdatedDate", 
+	ome."IsActive", 
+	ome."IsDeleted"
+from
+	"OR_APP"."OR_M_EVENT" ome
+where
+	(strpos(ome."Name", p_name)>0)
+	and 
+(strpos(ome."City", p_city)>0) and ome ."IsDeleted" =false 
+order by
+	ome."EventId"
+limit p_pagesize
+   offset ((p_pagenumber-1) * p_pagesize);
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_INSERT"(p_eventid integer DEFAULT 0, p_name text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_userid bigint DEFAULT NULL::bigint, p_interestid bigint DEFAULT NULL::bigint, p_publicevent boolean DEFAULT NULL::boolean, p_capacity bigint DEFAULT NULL::bigint, p_eventtime timestamp without time zone DEFAULT NULL::timestamp without time zone, p_streetaddress1 text DEFAULT NULL::text, p_streetaddress2 text DEFAULT NULL::text, p_city text DEFAULT NULL::text, p_state text DEFAULT NULL::text, p_zipcode text DEFAULT NULL::text, p_country text DEFAULT NULL::text)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = now();
+
+begin
+		
+insert
+	into
+	"OR_APP"."OR_M_EVENT" (
+	"Name",
+	"Description" ,
+	"Userid" ,
+	"InterestId",
+	"PublicEvent",
+	"Capacity" ,
+	"EventTime" ,
+	"StreetAddress1",
+	"StreetAddress2",
+	"City" ,
+	"State",
+	"Zipcode",
+	"Country" ,
+	"CreatedBy" ,
+	"CreatedDate" ,
+	"UpdateBy" ,
+	"UpdatedDate" ,
+	"IsActive" ,
+	"IsDeleted")
+values(p_name,
+	p_description,
+	p_userid,
+	p_interestid,
+	p_publicevent,
+	p_capacity,
+	p_eventtime,
+	p_streetaddress1,
+	p_streetaddress2,
+	p_city,
+	p_state,
+	p_zipcode,
+	p_country,
+	'Hetal',
+	CurrentDateUtc,
+	'Hetal',
+	CurrentDateUtc,
+	true,
+	false
+	)
+returning "EventId" into p_eventid;
+return p_eventid;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_SELECTBYID"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("EventId" integer, "Name" character varying, "Description" character varying, "Userid" bigint, "InterestId" bigint, "PublicEvent" boolean, "Capacity" integer, "EventTime" timestamp without time zone, "StreetAddress1" character varying, "StreetAddress2" character varying, "City" character varying, "State" character varying, "Zipcode" character varying, "Country" character varying, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	if (exists(select	* from	outreachdb."OR_APP"."OR_M_EVENT" where 	outreachdb."OR_APP"."OR_M_EVENT"."EventId" = p_id)) then 
+	return QUERY
+	select
+	ome."EventId",
+	ome."Name",
+	ome."Description",
+	ome."Userid",
+	ome."InterestId",
+	ome."PublicEvent",
+	ome."Capacity",
+	ome."EventTime",
+	ome."StreetAddress1",
+	ome."StreetAddress2",
+	ome."City",
+	ome."State",
+	ome."Zipcode",
+	ome."Country",
+	ome."CreatedBy",
+	ome."CreatedDate",
+	ome."UpdateBy",
+	ome."UpdatedDate",
+	ome."IsActive",
+	ome."IsDeleted"
+from
+	"OR_APP"."OR_M_EVENT" ome
+where
+	ome."EventId" = p_id;
+else
+	 raise exception 'Event % is not found!',
+p_id;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_SELECTBYINTEREST"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("EventId" integer, "Name" character varying, "Description" character varying, "Userid" bigint, "InterestId" bigint, "PublicEvent" boolean, "Capacity" integer, "EventTime" timestamp without time zone, "StreetAddress1" character varying, "StreetAddress2" character varying, "City" character varying, "State" character varying, "Zipcode" character varying, "Country" character varying, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean, "Latitude" double precision, "Longitude" double precision)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	if (exists(select	*  from outreachdb."OR_APP"."OR_M_EVENT" where	outreachdb."OR_APP"."OR_M_EVENT"."InterestId" = p_id)) then 
+	return QUERY
+	select
+	ome."EventId",
+	ome."Name",
+	ome."Description",
+	ome."Userid",
+	ome."InterestId",
+	ome."PublicEvent",
+	ome."Capacity",
+	ome."EventTime",
+	ome."StreetAddress1",
+	ome."StreetAddress2",
+	ome."City",
+	ome."State",
+	ome."Zipcode",
+	ome."Country",
+	ome."CreatedBy",
+	ome."CreatedDate",
+	ome."UpdateBy",
+	ome."UpdatedDate",
+	ome."IsActive",
+	ome."IsDeleted",
+	ome ."Latitude" ,
+	ome ."Longitude" 
+from
+	"OR_APP"."OR_M_EVENT" ome
+where
+	ome."InterestId" = p_id;
+else
+	 raise exception 'Event % is not found!',
+p_id;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_SELECTBYUSERID"(p_userid integer)
+ RETURNS TABLE("EventId" integer, "Name" character varying, "Description" character varying, "PublicEvent" boolean, "Capacity" integer, "EventTime" timestamp without time zone)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+		
+return QUERY
+	select
+	ome."EventId",
+	ome."Name",
+	ome."Description",
+	ome."PublicEvent",
+	ome."Capacity",
+	ome."EventTime"
+from
+	"OR_APP"."OR_M_EVENT" ome
+where
+	ome."Userid" = p_userid and ome."IsDeleted" = false;
+
+	END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_EVENT_UPDATE"(p_eventid integer DEFAULT 0, p_name text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_userid integer DEFAULT NULL::integer, p_interestid integer DEFAULT NULL::integer, p_publicevent boolean DEFAULT NULL::boolean, p_capacity integer DEFAULT NULL::integer, p_eventtime date DEFAULT NULL::date, p_streetaddress1 text DEFAULT NULL::text, p_streetaddress2 text DEFAULT NULL::text, p_city text DEFAULT NULL::text, p_state text DEFAULT NULL::text, p_zipcode text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+	begin
+		
+		 IF COALESCE(p_eventid,0) <> 0 THEN
+UPDATE "OR_APP"."OR_M_EVENT"
+SET "Name"=COALESCE(p_name,"Name"), 
+"Description"=COALESCE(p_description,"Description"),
+"UserId"=COALESCE(p_userid,"UserId"), 
+"InterestId"=COALESCE(p_interestid,"InterestId"),
+"PublicEvent"=COALESCE(p_publicevent,"PublicEvent"), 
+"Capacity"=COALESCE(p_capacity,"Capacity"),
+"EventTime"=COALESCE(p_eventtime,"EventTime"), 
+"StreetAddress1"=COALESCE(p_streetaddress1,"StreetAddress1"),
+"StreetAddress2"=COALESCE(p_streetaddress2,"StreetAddress2"), 
+"City"=COALESCE(p_city,"City"),
+"State"=COALESCE(p_state,"State"),
+"Zipcode"=COALESCE(p_zipcode,"Zipcode"), 
+"Country"=COALESCE(p_country,"Country"),
+"UpdateBy"=COALESCE(p_updateby,"UpdateBy"), 
+"UpdatedDate"=CurrentDateUtc, 
+"IsActive"=COALESCE(p_isactive,"IsActive"), 
+"IsDeleted"=COALESCE(p_isdeleted,"IsDeleted")
+WHERE "EventId"=p_eventid;
+
+
+
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_INTEREST_DELETE"(p_interestid integer DEFAULT 0, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+UPDATE "OR_APP"."OR_M_INTEREST" 
+SET  "IsDeleted"=NOT(COALESCE(p_isdeleted, "IsDeleted"))
+WHERE "InterestId"=p_interestid 
+RETURNING "InterestId" into p_interestid ;
+return p_interestid ;
+
+
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_INTEREST_GETALL"(p_pagenumber integer DEFAULT 1, p_pagesize integer DEFAULT 5, p_name text DEFAULT ''::text)
+ RETURNS TABLE("InterestId" integer, "Name" character varying, "Category" character varying, "Icon" character varying, "Description" character varying, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+
+
+begin
+	    return QUERY
+select
+	omi."InterestId", 
+	omi."Name", 
+	omi."Category", 
+	omi."Icon", 
+	omi."Description",
+	omi."CreatedBy", 
+	omi."CreatedDate", 
+	omi."UpdateBy",
+	omi."UpdatedDate",
+	omi."IsActive", 
+	omi."IsDeleted"
+from
+	"OR_APP"."OR_M_INTEREST" omi
+where
+	(strpos(omi."Name", p_name)>0)
+order by
+	omi."InterestId"
+limit p_pagesize
+   offset ((p_pagenumber-1) * p_pagesize);
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_INTEREST_INSERT"(p_interestid integer DEFAULT 0, p_name text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_icon text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_createdby text DEFAULT NULL::text, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		if(exists(
+select
+	1
+from
+	"OR_APP"."OR_M_INTEREST"
+where
+	"Name" = p_name))
+		then return -1;
+else
+insert
+	into
+		"OR_APP"."OR_M_INTEREST" (
+	"Name" ,
+	"Category" ,
+	"Icon",
+	"Description" ,
+		"CreatedBy" ,
+		"CreatedDate" ,
+		"UpdateBy" ,
+		"UpdatedDate" ,
+		"IsActive" ,
+		"IsDeleted"
+		)
+values(p_name,
+	p_category,
+	p_icon,
+	p_description,
+	p_createdby,
+	CurrentDateUtc,
+	p_updateby ,
+	CurrentDateUtc,
+	p_isactive ,
+	p_isdeleted)
+returning "InterestId"
+	into
+		p_interestid;
+
+return p_interestid;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_INTEREST_SELECTBYID"(p_id integer DEFAULT 0)
+ RETURNS TABLE("InterestId" integer, "Name" character varying, "Category" character varying, "Icon" character varying, "Description" character varying, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+
+
+begin
+	    if (exists(
+select
+	*
+from
+	outreachdb."OR_APP"."OR_M_INTEREST"
+where
+	outreachdb."OR_APP"."OR_M_INTEREST"."InterestId" = p_id)) 
+	
+	then 
+	
+	return QUERY
+	select
+	omi."InterestId", 
+	omi."Name", 
+	omi."Category", 
+	omi."Icon", 
+	omi."Description",
+	omi."CreatedBy", 
+	omi."CreatedDate", 
+	omi."UpdateBy",
+	omi."UpdatedDate",
+	omi."IsActive", 
+	omi."IsDeleted"
+from
+	"OR_APP"."OR_M_INTEREST" omi
+where
+	omi."InterestId" = p_id;
+else
+	 raise exception 'Interest % is not found!',
+p_id;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_INTEREST_UPDATE"(p_interestid integer DEFAULT 0, p_name text DEFAULT NULL::text, p_category text DEFAULT NULL::text, p_icon text DEFAULT NULL::text, p_description text DEFAULT NULL::text, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+	begin
+		
+		 IF COALESCE(p_interestid,0) <> 0 THEN
+UPDATE "OR_APP"."OR_M_INTEREST"
+SET "Name"=COALESCE(p_name,"Name"), 
+"Category"=COALESCE(p_category,"Category"),
+"Icon"=COALESCE(p_icon,"Icon"),
+"Description"=COALESCE(p_description,"Description"),
+"UpdateBy"=COALESCE(p_updateby,"UpdateBy"), 
+"UpdatedDate"=CurrentDateUtc, 
+"IsActive"=COALESCE(p_name,"IsActive"),
+"IsDeleted"=COALESCE(p_name,"IsDeleted")
+WHERE "InterestId"=p_interestid;
+
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_SCHOOL_DELETE"(p_schoolid integer DEFAULT 0, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+UPDATE "OR_APP"."OR_M_SCHOOL"  
+SET  "IsDeleted"=NOT(COALESCE(p_isdeleted, "IsDeleted"))
+WHERE "SchoolId"=p_schoolid
+RETURNING "SchoolId" into p_schoolid;
+return p_schoolid;
+
+
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_SCHOOL_GETALL"(p_pagenumber integer DEFAULT 1, p_pagesize integer DEFAULT 5, p_name text DEFAULT ''::text, p_city text DEFAULT ''::text)
+ RETURNS TABLE("SchoolId" integer, "Name" character varying, "StreetAddress1" character varying, "StreetAddress2" character varying, "City" character varying, "State" character varying, "Zipcode" character varying, "Country" character varying, "Latitude" double precision, "Longitude" double precision, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+
+
+begin
+	    return QUERY
+select
+	oms."SchoolId",
+	oms."Name",
+	oms."StreetAddress1",
+	oms."StreetAddress2",
+	oms."City",
+	oms."State",
+	oms."Zipcode",
+	oms."Country",
+	oms."Latitude",
+	oms."Longitude",
+	oms."CreatedBy",
+	oms."CreatedDate",
+	oms."UpdateBy",
+	oms."UpdatedDate",
+	oms."IsActive",
+	oms."IsDeleted"
+from
+	"OR_APP"."OR_M_SCHOOL" oms
+where
+	(strpos(oms."Name", p_name)>0)
+	and 
+(strpos(oms."City", p_city)>0)
+order by
+	oms."SchoolId"
+limit p_pagesize
+   offset ((p_pagenumber-1) * p_pagesize);
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_SCHOOL_INSERT"(p_schoolid integer DEFAULT 0, p_name text DEFAULT NULL::text, p_streetaddress1 text DEFAULT NULL::text, p_streetaddress2 text DEFAULT NULL::text, p_city text DEFAULT NULL::text, p_state text DEFAULT NULL::text, p_zipcode text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_latitude double precision DEFAULT NULL::double precision, p_longitude double precision DEFAULT NULL::double precision, p_createdby text DEFAULT NULL::text, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		if(exists(
+select
+	1
+from
+	"OR_APP"."OR_M_SCHOOL"
+where
+	"Name" = p_name))
+		then return -1;
+else
+insert
+	into
+		"OR_APP"."OR_M_SCHOOL" (
+		"Name",
+	"StreetAddress1" ,
+	"StreetAddress2" ,
+	"City" ,
+	"State" ,
+	"Zipcode" ,
+	"Country" ,
+	"Latitude" ,
+	"Longitude",
+		"CreatedBy" ,
+		"CreatedDate" ,
+		"UpdateBy" ,
+		"UpdatedDate" ,
+		"IsActive" ,
+		"IsDeleted"
+		)
+values(p_name,
+	p_streetaddress1,
+	p_streetaddress2 ,
+	p_city ,
+	p_state ,
+	p_zipcode ,
+	p_country ,
+	p_latitude ,
+	p_longitude,
+	p_createdby,
+	CurrentDateUtc,
+	p_updateby ,
+	CurrentDateUtc,
+	p_isactive ,
+	p_isdeleted)
+returning "SchoolId"
+	into
+		p_schoolid;
+
+return p_schoolid;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_SCHOOL_SELECTBYID"(p_id integer DEFAULT 0)
+ RETURNS TABLE("SchoolId" integer, "Name" character varying, "StreetAddress1" character varying, "StreetAddress2" character varying, "City" character varying, "State" character varying, "Zipcode" character varying, "Country" character varying, "Latitude" double precision, "Longitude" double precision, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	return QUERY
+	select
+	oms."SchoolId",
+	oms."Name",
+	oms."StreetAddress1",
+	oms."StreetAddress2",
+	oms."City",
+	oms."State",
+	oms."Zipcode",
+	oms."Country",
+	oms."Latitude",
+	oms."Longitude",
+	oms."CreatedBy",
+	oms."CreatedDate",
+	oms."UpdateBy",
+	oms."UpdatedDate",
+	oms."IsActive",
+	oms."IsDeleted"
+from
+	outreachdb."OR_APP"."OR_M_SCHOOL" oms
+where
+	oms."SchoolId" = p_id and oms."IsDeleted" = false ;
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_SCHOOL_UPDATE"(p_schoolid integer DEFAULT 0, p_name text DEFAULT NULL::text, p_streetaddress1 text DEFAULT NULL::text, p_streetaddress2 text DEFAULT NULL::text, p_city text DEFAULT NULL::text, p_state text DEFAULT NULL::text, p_zipcode text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_latitude double precision DEFAULT NULL::double precision, p_longitude double precision DEFAULT NULL::double precision, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+	begin
+		
+		 IF COALESCE(p_schoolid,0) <> 0 THEN
+update
+	"OR_APP"."OR_M_SCHOOL"
+set
+	"Name" = COALESCE(p_name,"Name"),
+	"StreetAddress1" = COALESCE(p_streetaddress1,"StreetAddress1"),
+	"StreetAddress2" = COALESCE(p_streetaddress2,"StreetAddress2"),
+	"City" = COALESCE(p_city,"City"),
+	"State" = COALESCE(p_state,"State"),
+	"Zipcode" = COALESCE(p_zipcode,"Zipcode"),
+	"Country" = COALESCE(p_country,"Country"),
+	"Latitude" = COALESCE(p_latitude,"Latitude"),
+	"Longitude" = COALESCE(p_longitude,"Longitude"),
+	"UpdateBy" = COALESCE(p_updateby,"UpdateBy"),
+	"UpdatedDate" =CurrentDateUtc,
+	"IsActive" = COALESCE(p_isactive,"IsActive"),
+	"IsDeleted" = COALESCE(p_isdeleted,"IsDeleted")
+where
+	"SchoolId" = p_schoolid;
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_USER_DELETE"(p_userid integer DEFAULT 0, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+UPDATE "OR_APP"."OR_M_USERDETAILS" 
+SET  "IsDeleted"=NOT(COALESCE(p_isdeleted, "IsDeleted"))
+WHERE "Userid"=p_userid
+RETURNING "Userid" into p_userid;
+return p_userid;
+
+
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_USER_FORGOTPASSWORD"(p_useremail text DEFAULT NULL::text, OUT p_otp integer)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+	begin
+		
+insert
+	into
+	"OR_APP"."OR_T_OTP_TEST"
+( "UserEmail",
+	"OneTimeToken",
+	"ValidTill",
+	"ActiveFrom",
+	"CreatedDate",
+	"CreatedBy",
+	"ModifiedDate",
+	"ModifiedBy")
+values(p_useremail,
+floor(random()* (9999-1000 + 1) + 1000)::integer ,
+current_timestamp + (30 || ' minutes')::interval ,
+CURRENT_TIMESTAMP,
+CURRENT_TIMESTAMP,
+p_useremail,
+CURRENT_TIMESTAMP,
+p_useremail)
+returning "OneTimeToken"
+into
+	p_otp;
+
+end;
+
+$function$
+;
+
+null;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_USER_INSERT"(p_userid integer DEFAULT 0, p_profileimg text DEFAULT NULL::text, p_firstname text DEFAULT NULL::text, p_middlename text DEFAULT NULL::text, p_lastname text DEFAULT NULL::text, p_gender text DEFAULT NULL::text, p_useremail text DEFAULT NULL::text, p_userpassword text DEFAULT NULL::text, p_education text DEFAULT NULL::text, p_bio text DEFAULT NULL::text, p_role integer DEFAULT NULL::integer, p_schoolid integer DEFAULT NULL::integer)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = now();
+
+begin
+		if(exists(
+select
+	1
+from
+	"OR_APP"."OR_M_USERDETAILS"
+where
+	"UserEmail" = lower(p_useremail) ))
+		then return -1;
+else
+insert
+	into
+		"OR_APP"."OR_M_USERDETAILS" (
+		"ProfileImg",
+				"Firstname" ,
+				"Middlename",
+				"Lastname" ,
+				"Gender" ,
+				"UserEmail" ,
+				"UserPassword",
+				"Education" ,
+				"Bio" ,
+				"Role" ,
+				"SchoolId",
+				"CreatedBy" ,
+				"CreatedDate" ,
+				"UpdateBy" ,
+				"UpdatedDate" ,
+				"IsActive" ,
+				"IsDeleted"
+		)
+values(p_profileimg,
+	lower(p_firstname),
+	lower(p_middlename) ,
+	lower(p_lastname) ,
+	lower(p_gender) ,
+	lower(p_useremail) ,
+	p_userpassword ,
+	p_education ,
+	p_bio ,
+	p_role,
+	p_schoolid,
+	lower(p_useremail),
+	CurrentDateUtc,
+	lower(p_useremail) ,
+	CurrentDateUtc,
+	true,
+	false
+)
+returning "Userid"
+	into
+		p_userid;
+
+return p_userid;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_USER_OTP_VERIFY"(p_otp integer DEFAULT 0, p_useremail text DEFAULT NULL::text)
+ RETURNS TABLE(otp integer)
+ LANGUAGE plpgsql
+AS $function$
+--declare _currenttime timestamp without timezon;
+begin
+
+	return query
+select
+	case
+		when ( "ActiveFrom" <= LOCALTIMESTAMP 
+		and  "ValidTill" >= LOCALTIMESTAMP  )
+		   then 1 --valid Otp for 5 minute 
+		else 0 --invalid otp
+	end as otp
+from
+	"OR_APP"."OR_T_OTP_TEST"
+where
+	"UserEmail" = p_useremail and  "OneTimeToken" = p_otp;
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_USER_PASSWORD_UPDATE"(p_useremail text DEFAULT NULL::text, p_userpassword text DEFAULT NULL::text)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+		
+if(exists(
+select
+	1
+from
+	"OR_APP"."OR_M_USERDETAILS" 
+where
+	"UserEmail"  = p_useremail))
+		then 
+		UPDATE "OR_APP"."OR_M_USERDETAILS" 
+SET "UserPassword"=COALESCE(p_userpassword,"UserPassword")
+WHERE "UserEmail"=p_useremail;
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_USER_SELECTBYID"(p_id integer DEFAULT 0)
+ RETURNS TABLE("Userid" integer, "ProfileImg" character varying, "Firstname" character varying, "Middlename" character varying, "Lastname" character varying, "Gender" character varying, "UserEmail" character varying, "UserPassword" character varying, "Education" character varying, "Bio" character varying, "Role" integer, "SchoolId" integer, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	
+	return QUERY
+	select
+	omu."Userid",
+	omu."ProfileImg",
+	omu."Firstname" ,
+	omu."Middlename",
+	omu."Lastname" ,
+	omu."Gender" ,
+	omu."UserEmail",
+	omu."UserPassword",
+	omu."Education" ,
+	omu."Bio",
+	omu."Role",
+	omu."SchoolId",
+	omu."CreatedBy",
+	omu."CreatedDate",
+	omu."UpdateBy" ,
+	omu."UpdatedDate",
+	omu."IsActive" ,
+	omu."IsDeleted"
+from
+	outreachdb."OR_APP"."OR_M_USERDETAILS" omu
+where
+	omu."Userid" = p_id and omu."IsDeleted" = false ;
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_M_USER_UPDATE"(p_userid integer DEFAULT 0, p_profileimg text DEFAULT NULL::text, p_firstname text DEFAULT NULL::text, p_middlename text DEFAULT NULL::text, p_lastname text DEFAULT NULL::text, p_gender text DEFAULT NULL::text, p_useremail text DEFAULT NULL::text, p_userpassword text DEFAULT NULL::text, p_education text DEFAULT NULL::text, p_bio text DEFAULT NULL::text, p_role integer DEFAULT NULL::integer, p_schoolid integer DEFAULT NULL::integer)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+
+declare CurrentDateUtc timestamp = now();
+
+begin
+		
+		 if coalesce(p_userid, 0) <> 0 then
+update
+	"OR_APP"."OR_M_USERDETAILS"
+set
+	"ProfileImg" = coalesce(p_profileimg, "ProfileImg"),
+	"Firstname" = coalesce(p_firstname, "Firstname"),
+	"Middlename" = coalesce(p_middlename, "Middlename"),
+	"Lastname" = coalesce(p_lastname, "Lastname"),
+	"Gender" = coalesce(p_gender, "Gender"),
+	"UserEmail" = coalesce(p_useremail, "UserEmail"),
+	"UserPassword" = coalesce(p_userpassword, "UserPassword"),
+	"Education" = coalesce(p_education, "Education"),
+	"Bio" = coalesce(p_bio, "Bio"),
+	"Role" = coalesce(p_role, "Role"),
+	"SchoolId" = coalesce(p_schoolid, "SchoolId"),
+	"UpdateBy" = coalesce(p_useremail, "UpdateBy"),
+	"UpdatedDate" = CurrentDateUtc,
+	"IsActive" = coalesce(true, "IsActive"),
+	"IsDeleted" = coalesce(false, "IsDeleted")
+where
+	"Userid" = p_userid;
+
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_GROUPCHAT_DELETE"(p_groupchatid integer DEFAULT 0, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+UPDATE "OR_APP"."OR_T_GROUPCHAT"
+SET  "IsDeleted"=NOT(COALESCE(p_isdeleted, "IsDeleted"))
+WHERE "GroupchatId"=p_tagsid
+RETURNING "GroupchatId" into p_groupchatid;
+return p_groupchatid;
+
+
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_GROUPCHAT_INSERT"(p_groupchatid integer DEFAULT 0, p_userid integer DEFAULT 0, p_eventid integer DEFAULT 0, p_message text DEFAULT NULL::text)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		if coalesce(p_groupchatid, 0) <> 0 then 
+		return -1;
+else
+insert
+	into
+		"OR_APP"."OR_T_GROUPCHAT" (
+	
+		"Userid" ,
+		"EventId",
+	    "Message",
+		"CreatedBy" ,
+		"CreatedDate" ,
+		"UpdateBy" ,
+		"UpdatedDate" ,
+		"IsActive" ,
+		"IsDeleted"
+		)
+values(
+	p_userid ,
+	p_eventid ,
+	p_message,
+	p_userid,
+	CurrentDateUtc,
+	p_userid ,
+	CurrentDateUtc,
+	true ,
+	false)
+returning "GroupchatId"
+	into
+		p_groupchatid;
+
+return p_groupchatid;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_GROUPCHAT_SELECTBYEVENTID"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("GroupchatId" integer, "Userid" bigint, "EventId" bigint, "Message" character varying, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean, "Name" text)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	if (exists(select	1 from 	outreachdb."OR_APP"."OR_T_GROUPCHAT" where
+	outreachdb."OR_APP"."OR_T_GROUPCHAT"."EventId" = p_id)) then 
+	return QUERY
+	select
+	   otg."GroupchatId",
+	   otg. "Userid",
+		otg."EventId",
+		otg."Message",
+	    otg. "CreatedBy",
+		otg."CreatedDate",
+		otg."UpdateBy",
+	    otg."UpdatedDate",
+	    otg."IsActive",
+	    otg."IsDeleted",
+	    CONCAT("Firstname",' ' , "Middlename",' ', "Lastname"  )as "Name"
+	     
+	     
+from
+	outreachdb."OR_APP"."OR_T_GROUPCHAT" otg
+	join "OR_APP"."OR_M_USERDETAILS" ome 
+on
+	ome."Userid" = otg."Userid"
+where 	otg."EventId" = p_id and otg."IsDeleted" = false
+order by otg."CreatedDate" desc  ;
+else
+	 raise exception 'Groupchat % is not found!',p_id;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_GROUPCHAT_SELECTBYID"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE(p_groupchatid integer, p_userid bigint, p_eventid bigint, p_createdby character varying, p_createddate date, p_updateby character varying, p_updateddate date, p_isactive boolean, p_isdeleted boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	if (exists(
+select
+	*
+from
+	outreachdb."OR_APP"."OR_T_GROUPCHAT"
+where
+	outreachdb."OR_APP"."OR_T_GROUPCHAT"."TagsId" = p_id)) then 
+	return QUERY
+	select
+	"GroupchatId" as p_groupchatid,
+		"UserId" as p_userid,
+		"EventId" as p_eventid, 
+		"CreatedBy" as p_createdby,
+		"CreatedDate" as p_createddate,
+		"UpdateBy" as p_updateby,
+		"UpdatedDate" as p_updateddate,
+		"IsActive" as p_isactive,
+		"IsDeleted" as p_isdeleted
+from
+	outreachdb."OR_APP"."OR_T_GROUPCHAT"
+where
+	outreachdb."OR_APP"."OR_T_GROUPCHAT"."GroupchatId" = p_groupchatid;
+else
+	 raise exception 'Groupchat % is not found!',
+p_id;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_GROUPCHAT_UPDATE"(p_groupchatid integer DEFAULT 0, p_userid integer DEFAULT 0, p_eventid integer DEFAULT 0, p_createdby text DEFAULT NULL::text, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		
+		 if coalesce(p_groupchatid, 0) <> 0 then
+update
+	"OR_APP"."OR_T_GROUPCHAT"
+set
+		"GroupchatId" = coalesce(p_groupchatid, "UserId"),
+		"UserId" = coalesce(p_userid, "UserId"),
+		"EventId" = coalesce(p_interestid, "EventId" ),
+		"UpdateBy" = coalesce(p_updateby, "UpdateBy"),
+		"UpdatedDate" = CurrentDateUtc,
+		"IsActive" = coalesce(p_isactive, "IsActive" ),
+		"IsDeleted" = coalesce(p_isdeleted, "IsDeleted")
+where
+	"GroupchatId" = p_groupchatid;
+
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_GROUPCHAT__GETALL"(p_pagenumber integer DEFAULT NULL::integer, p_pagesize integer DEFAULT NULL::integer)
+ RETURNS TABLE(p_groupchatid integer, p_userid bigint, p_eventid bigint, p_createdby character varying, p_updateby character varying, p_isactive boolean, p_isdeleted boolean)
+ LANGUAGE plpgsql
+AS $function$
+	BEGIN
+
+		return QUERY
+		select "GroupchatId" as p_groupchatid,
+		"UserId" as p_userid,
+		"EventId" as p_eventid, 
+		"CreatedBy" as p_createdby,
+		"CreatedDate" as p_createddate,
+		"UpdateBy" as p_updateby,
+		"UpdatedDate" as p_updateddate,
+		"IsActive" as p_isactive,
+		"IsDeleted" as p_isdeleted
+		
+		from outreachdb."OR_APP"."OR_T_GROUPCHAT"
+    order by outreachdb."OR_APP"."OR_T_GROUPCHAT"."GroupchatId"
+    limit p_pagesize
+    OFFSET ((p_pagenumber-1) * p_pagesize);
+		
+	END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_TAGS_DELETE"(p_tagsid integer DEFAULT 0, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+UPDATE "OR_APP"."OR_T_TAGS"
+SET  "IsDeleted"=NOT(COALESCE(p_isdeleted, "IsDeleted"))
+WHERE "TagsId" =p_tagsid;
+--RETURNING "TagsId" into p_tagsid;
+return 1;
+
+
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_TAGS_GETALL"(p_pagenumber integer DEFAULT NULL::integer, p_pagesize integer DEFAULT NULL::integer)
+ RETURNS TABLE("TagsId" integer, "Userid" bigint, "InterestId" bigint, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+
+		return QUERY
+		select
+	ott."TagsId" ,
+	ott."Userid",
+	ott."InterestId", 
+	ott."CreatedBy",
+	ott."CreatedDate",
+	ott."UpdateBy",
+	ott."UpdatedDate",
+	ott."IsActive",
+	ott."IsDeleted"
+from
+	outreachdb."OR_APP"."OR_T_TAGS" ott
+order by
+	ott."TagsId"
+limit p_pagesize
+    offset ((p_pagenumber-1) * p_pagesize);
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_TAGS_INSERT"(p_userid integer DEFAULT 0, p_interestid integer DEFAULT 0, OUT p_tagsid integer)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+--IF COALESCE(p_tagsid,0) <> 0 then 
+		--return -1;
+--else
+insert
+	into
+		"OR_APP"."OR_T_TAGS" (
+	
+		"Userid",
+		"InterestId" ,
+		"CreatedBy" ,
+		"CreatedDate" ,
+		"UpdateBy" ,
+		"UpdatedDate" ,
+		"IsActive" ,
+		"IsDeleted"
+		)
+values(
+	p_userid ,
+	p_interestid ,
+	'Trupti' ,
+	CurrentDateUtc,
+	'Trupti' ,
+	CurrentDateUtc,
+	true ,
+	false)
+returning "TagsId"
+	into
+		p_tagsid
+	;
+
+--end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_TAGS_SELECTBYID"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("TagsId" integer, "Userid" bigint, "InterestId" bigint, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	if (exists(
+select
+	*
+from
+	outreachdb."OR_APP"."OR_T_TAGS"
+where
+	outreachdb."OR_APP"."OR_T_TAGS"."TagsId" = p_id)) then 
+	return QUERY
+	select
+	ott."TagsId" ,
+	ott."Userid",
+	ott."InterestId",
+	ott."CreatedBy",
+	ott."CreatedDate",
+	ott."UpdateBy",
+	ott."UpdatedDate",
+	ott."IsActive",
+	ott."IsDeleted"
+from
+	outreachdb."OR_APP"."OR_T_TAGS" ott
+where
+	ott."TagsId" = p_id;
+else
+	 raise exception 'Tags % is not found!',
+p_id;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_TAGS_SELECTBYUSER"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("TagsId" integer, "InterestId" bigint, "Name" character varying)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	return query 
+	select
+	ott."TagsId" ,
+	ott."InterestId",
+	omi."Name"
+from
+	outreachdb."OR_APP"."OR_T_TAGS" ott JOIN outreachdb."OR_APP"."OR_M_INTEREST" omi  ON ott."InterestId" = omi."InterestId"
+where
+	ott."Userid" = p_id and ott."IsDeleted" = false ;
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_TAGS_UPDATE"(p_tagsid integer DEFAULT 0, p_userid integer DEFAULT 0, p_interestid integer DEFAULT 0)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		
+		 if coalesce(p_tagsid, 0) <> 0 then
+update
+	"OR_APP"."OR_T_TAGS"
+set
+	
+		"UserId" = coalesce(p_userid, "UserId"),
+		"InterestId" = coalesce(p_interestid, "InterestId" ),
+		"UpdateBy" = coalesce(p_userid, "UpdateBy"),
+		"UpdatedDate" = CurrentDateUtc,
+		"IsActive" = coalesce(true, "IsActive" ),
+		"IsDeleted" = coalesce(false , "IsDeleted")
+where
+	"TagsId" = p_tagsid and "IsDeleted"= false;
+
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_USEREVENT_DELETE"(p_usereventid integer DEFAULT 0, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+begin
+UPDATE "OR_APP"."OR_T_USEREVENT" 
+SET  "IsDeleted"=NOT(COALESCE(p_isdeleted, "IsDeleted"))
+WHERE "UserEventId"=p_usereventid
+RETURNING "UserEventId" into p_usereventid;
+return p_usereventid;
+
+
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_USEREVENT_GETALL"(p_pagenumber integer DEFAULT NULL::integer, p_pagesize integer DEFAULT NULL::integer)
+ RETURNS TABLE(p_usereventid integer, p_userid bigint, p_eventid bigint, p_status boolean, p_createdby character varying, p_createddate timestamp without time zone, p_updateby character varying, p_updateddate timestamp without time zone, p_isactive boolean, p_isdeleted boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+
+		return QUERY
+		select
+	"UserEventId" as p_usereventid,
+		"Userid" as p_userid,
+		"EventId" as p_eventid, 
+		"Status" as p_status,
+		"CreatedBy" as p_createdby,
+		"CreatedDate" as p_createddate,
+		"UpdateBy" as p_updateby,
+		"UpdatedDate" as p_updateddate,
+		"IsActive" as p_isactive,
+		"IsDeleted" as p_isdeleted
+from
+	outreachdb."OR_APP"."OR_T_USEREVENT"
+order by
+	outreachdb."OR_APP"."OR_T_USEREVENT"."UserEventId"
+limit p_pagesize
+    offset ((p_pagenumber-1) * p_pagesize);
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_USEREVENT_INSERT"(p_usereventid integer DEFAULT 0, p_userid integer DEFAULT 0, p_eventid integer DEFAULT 0, p_status boolean DEFAULT true)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		--IF COALESCE(p_tagsid,0) <> 0 then 
+		--return -1;
+--else
+insert
+	into
+		"OR_APP"."OR_T_USEREVENT" (
+	
+		"Userid",
+		"EventId" ,
+		"Status",
+		"CreatedBy" ,
+		"CreatedDate" ,
+		"UpdateBy" ,
+		"UpdatedDate" ,
+		"IsActive" ,
+		"IsDeleted"
+		)
+values(
+	p_userid ,
+	p_eventid ,
+	p_status,
+	p_userid,
+	CurrentDateUtc,
+	p_userid ,
+	CurrentDateUtc,
+	true ,
+	false)
+returning "UserEventId"
+	into
+		p_usereventid;
+
+return p_usereventid;
+--end if;
+end;
+
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_USEREVENT_SELECTBYID"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("UserEventId" integer, "Userid" bigint, "EventId" bigint, "Status" boolean, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	
+	return QUERY
+	select
+	oru."UserEventId" ,
+		oru."Userid",
+		oru."EventId", 
+		oru."Status",
+		oru."CreatedBy",
+		oru."CreatedDate",
+		oru."UpdateBy" ,
+		oru."UpdatedDate" ,
+		oru."IsActive" ,
+		oru."IsDeleted"
+from
+	outreachdb."OR_APP"."OR_T_USEREVENT" oru
+where
+	oru."UserEventId" = p_id
+	and oru."IsDeleted" = false;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_USEREVENT_SELECTBYUSERID"(p_id integer DEFAULT NULL::integer)
+ RETURNS TABLE("UserEventId" integer, "Userid" bigint, "EventId" bigint, "Status" boolean, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	
+	return QUERY
+	select
+	oru."UserEventId" ,
+		oru."Userid",
+		oru."EventId", 
+		oru."Status",
+		oru."CreatedBy",
+		oru."CreatedDate",
+		oru."UpdateBy" ,
+		oru."UpdatedDate" ,
+		oru."IsActive" ,
+		oru."IsDeleted"
+from
+	outreachdb."OR_APP"."OR_T_USEREVENT" oru
+where
+	oru."Userid" = p_id
+	and oru."IsDeleted" = false;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_USEREVENT_UPDATE"(p_usereventid integer DEFAULT 0, p_userid integer DEFAULT 0, p_eventid integer DEFAULT 0, p_status boolean DEFAULT true, p_createdby text DEFAULT NULL::text, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		
+		 if coalesce(p_usereventid, 0) <> 0 then
+update
+	"OR_APP"."OR_T_USEREVENT"
+set
+	
+		"Userid" = coalesce(p_userid, "Userid"),
+		"EventId" = coalesce(p_eventid, "EventId" ),
+		"Status" = coalesce(p_status, "Status" ),
+		"CreatedBy" = coalesce(p_createdby, "CreatedBy"),
+		"CreatedDate" = CurrentDateUtc,
+		"UpdateBy" = coalesce(p_updateby, "UpdateBy"),
+		"UpdatedDate" = CurrentDateUtc,		
+		"IsActive" = coalesce(p_isactive, "IsActive" ),
+		"IsDeleted" = coalesce(p_isdeleted, "IsDeleted")
+where
+	"UserEventId" = p_usereventid;
+
+return 1;
+else 
+return 0;
+end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_T_USEREVENT_UPDATEBYEVENTIDANDUSERID"(p_usereventid integer DEFAULT 0, p_userid integer DEFAULT 0, p_eventid integer DEFAULT 0, p_status boolean DEFAULT false, p_updateby text DEFAULT NULL::text, p_isactive boolean DEFAULT NULL::boolean, p_isdeleted boolean DEFAULT NULL::boolean)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+		
+		-- if coalesce(p_usereventid, 0) <> 0 then
+update
+	"OR_APP"."OR_T_USEREVENT"
+set
+	
+		"Userid" = coalesce(p_userid, "Userid"),
+		"EventId" = coalesce(p_eventid, "EventId" ),
+		"Status" = coalesce(p_status, "Status" ),
+		"UpdateBy" = coalesce(p_updateby, "UpdateBy"),
+		"UpdatedDate" = CurrentDateUtc,		
+		"IsActive" = coalesce(p_isactive, "IsActive" ),
+		"IsDeleted" = coalesce(p_isdeleted, "IsDeleted")
+where
+	"EventId" = p_eventid
+	and "Userid" = p_userid
+	and "IsDeleted" = false;
+
+return 1;
+--else 
+--return 0;
+--end if;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP"."FN_OR_USEREVENT_STATUS"(p_userid integer, p_eventid integer)
+ RETURNS TABLE("Status" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+		
+return QUERY
+select
+	--ome."EventId",
+	--ome."Name",
+	--oue."Userid",
+	oue."Status"
+from
+	"OR_APP"."OR_T_USEREVENT" oue 
+
+where
+	(oue."EventId" = p_eventid) and (oue."Userid" = p_userid)
+	and oue."IsDeleted" = false;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP".fn_auth_get_user_by_email(p_username text DEFAULT NULL::text, p_password text DEFAULT NULL::text)
+ RETURNS TABLE("Userid" integer, "UserName" character varying, "UserCode" integer, "Firstname" character varying, "Middlename" character varying, "Lastname" character varying, "UserEmail" character varying)
+ LANGUAGE plpgsql
+AS $function$
+	begin	
+return query
+select
+	oud."Userid",
+	oud."UserEmail"  as "UserName",
+	oud."Userid" as "UserCode",
+	oud."Firstname",
+	oud."Middlename",
+	oud."Lastname",
+	oud."UserEmail" 
+from
+	"OR_APP"."OR_M_USERDETAILS" oud
+where oud."UserEmail" = p_username and oud."UserPassword" = p_password ;
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "OR_APP".fn_auth_save_user_auth_session(p_sessionid character, p_usercode integer, p_useremail text, p_onetimetoken text, p_validtill timestamp without time zone)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+
+	BEGIN
+
+		INSERT INTO "OR_APP"."OR_T_UserAuthSession"
+("SessionId", "UserCode", "UserEmail", "OneTimeToken", "ValidTill", "ActiveFrom", "CreatedDate", "CreatedBy", "ModifiedDate", "ModifiedBy")
+VALUES(p_sessionid, p_usercode, p_useremail, p_onetimetoken, p_validtill, LOCALTIMESTAMP, LOCALTIMESTAMP, 0, LOCALTIMESTAMP, 0);
+return 1;
+		
+	END;
+$function$
+;

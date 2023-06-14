@@ -1,0 +1,45 @@
+-- "DSR_APP"."DSR_EMAIL" definition
+
+-- Drop table
+
+-- DROP TABLE "DSR_APP"."DSR_EMAIL";
+
+CREATE TABLE "DSR_APP"."DSR_EMAIL" (
+	"EmailId" serial4 NOT NULL,
+	"Name" varchar(100) NULL,
+	"From" varchar(100) NULL,
+	"To" varchar(100) NULL,
+	"Subject" varchar(500) NULL,
+	"Body" text NULL,
+	"EmailDate" timestamp NULL,
+	"Day" varchar(500) NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" timestamp NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" timestamp NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT "DSR_EMAIL_pkey" PRIMARY KEY ("EmailId")
+);
+
+
+-- "DSR_APP"."DSR_USER" definition
+
+-- Drop table
+
+-- DROP TABLE "DSR_APP"."DSR_USER";
+
+CREATE TABLE "DSR_APP"."DSR_USER" (
+	"UserId" serial4 NOT NULL,
+	"FirstName" varchar(100) NULL,
+	"MiddleName" varchar(100) NULL,
+	"LastName" varchar(500) NULL,
+	"Email" varchar(100) NULL,
+	"CreatedBy" varchar(100) NULL,
+	"CreatedDate" timestamp NULL,
+	"UpdateBy" varchar(100) NULL,
+	"UpdatedDate" timestamp NULL,
+	"IsActive" bool NULL,
+	"IsDeleted" bool NULL,
+	CONSTRAINT dsr_user_pk PRIMARY KEY ("UserId")
+);

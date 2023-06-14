@@ -1,0 +1,145 @@
+<div class="container-fluid">
+  <app-pagetitle title="User" ></app-pagetitle>
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <!-- <div>
+            <a href="javascript:void(0);" class="btn btn-success mb-2" (click)="openModal(content)">
+              <i class="mdi mdi-plus mr-2"></i> Add School
+            </a>
+          </div> -->
+          <!-- 
+          <h4 class="card-title">Advanced Data Table</h4>
+          <p class="card-sub-title">
+            Example of datatable.
+          </p> -->
+          <div class="row mb-md-2">
+            <div class="col-sm-12 col-md-3">
+              <div class="dataTables_length" id="tickets-table_length">
+                <label class="d-inline-flex align-items-center">Show
+                  <select name="tickets-table_length" aria-controls="tickets-table" name="pageSize"
+                    (change)="itemsPerPageChange($event.target.value)"
+                    class="custom-select custom-select-sm form-control form-control-sm mx-2">
+                    <option [ngValue]="5">5</option>
+                    <option [ngValue]="10">10</option>
+                    <option [ngValue]="15">15</option>
+                    <option [ngValue]="20">20</option>
+                  </select> entries</label>
+                  
+              </div>
+             </div>
+             
+            <!-- for user active and inactive -->
+            <!-- <div class="row mb-md-2"> -->
+              <div class="col-sm-12 col-md-3">
+                <div class="dataTables_length" id="tickets-table_length">
+                  <label class="d-inline-flex align-items-center">User
+                    <select name="tickets-table_length" aria-controls="tickets-table" name="useractive"
+                      (change)="useractivechange($event.target.value)"
+                      class="custom-select custom-select-sm form-control form-control-sm mx-2">
+                      <option [ngValue]="null">All</option>
+                      <option [ngValue]="true">Active</option>
+                      <option [ngValue]="false">InActive</option>                      
+                    </select></label>
+                    
+                </div>
+              </div>
+
+            <!-- [(ngModel)]="service.pageSize" -->
+            <!-- Search -->
+            <div class="col-sm-12 col-md-6">
+              <div id="tickets-table_filter" class="dataTables_filter text-md-right"><label
+                  class="d-inline-flex align-items-center">Search:
+                  <input type="text" name="Firstname" class="form-control form-control-sm ml-2"
+                    aria-controls="tickets-table" [(ngModel)]="Firstname" placeholder="First Name" (keyup)="Search(Firstname,Middlename,Lastname,UserEmail)">
+                    <input type="text" name="Middlename" class="form-control form-control-sm ml-2"
+                    aria-controls="tickets-table" [(ngModel)]="Middlename" placeholder="Middle Name" (keyup)="Search(Firstname,Middlename,Lastname,UserEmail)">
+                    <input type="text" name="Lastname" class="form-control form-control-sm ml-2"
+                    aria-controls="tickets-table" [(ngModel)]="Lastname" placeholder="Last Name" (keyup)="Search(Firstname,Middlename,Lastname,UserEmail)">
+                    <input type="text" name="UserEmail" class="form-control form-control-sm ml-2"
+                    aria-controls="tickets-table" [(ngModel)]="UserEmail" placeholder="Email" (keyup)="Search(Firstname,Middlename,Lastname,UserEmail)">
+                  </label></div>
+            </div>
+            <!-- End search -->
+          </div>
+          </div>
+          <!-- Table -->
+          <div class="table-responsive">
+            <table id="basic-datatable"
+              class="table table-bordered dt-responsive nowrap datatables no-footer dtr-inline">
+              <thead>
+                <tr>
+                  <th sortable="Firstname" (click)="onSort('Firstname','asce')">First Name</th>
+                  <!-- <th sortable="Middlename" (click)="onSort('Middlename','desc')">Middle Name</th> -->
+                  <th sortable="Lastname" (click)="onSort('Lastname','asce')">Last Name</th>
+                  <th sortable="UserEmail" (click)="onSort('UserEmail','asce')">Email</th>              
+                  <th sortable="Bio" (click)="onSort('Bio','asce')">Bio</th>               
+                  <th >Profile Image</th>
+                  <!-- <th >Admin</th> -->
+                  
+                </tr>
+              </thead>
+              <tbody *ngFor="let table of data">
+                <tr>
+                  
+                  <td>{{table.Firstname}}</td>
+                  <!-- <td>{{table.Middlename}}</td> -->
+                  <td>{{table.Lastname}}</td>                  
+                  <td>{{table.UserEmail}}</td>               
+                  <td>{{table.Bio}}</td>
+                  <td>
+                    <div *ngIf="table.ProfileImg">  <img [src]="table.ProfileImg" width="60px" height="60px" alt="User Image"></div>
+                  
+                  </td>
+                  <!-- <td>{{table.IsAdmin}}</td> -->
+                  
+                  
+                   <!-- <td>
+                    <div ngbDropdown placement="bottom-left">
+                      <i class="mdi mdi-dots-vertical dropdown-toggle" ngbDropdownToggle data-toggle="dropdown"
+                        aria-expanded="true"></i>
+                      <div class="dropdown-menu dropdown-menu-right" ngbDropdownMenu>
+                        <a class="dropdown-item" href="javascript: void(0);" (click)=" editClick(table); openModal(content)"><i
+                            class="ri-edit-fill"></i>
+                          Edit</a>
+                        <a class="dropdown-item" href="javascript: void(0);" (click)="openModal(confirmModal); DeleteSchool(table.SchoolId)"><i
+                            class="ri-delete-bin-fill"></i>
+                          Delete</a> 
+                      </div>
+                    </div>
+                  </td>  -->
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- End table -->
+          <div class="row justify-content-md-between align-items-md-center mt-2">
+            <div class="col-sm-12 col-md-5">
+              <div class="dataTables_info mb-2" id="tickets-table_info" role="status" aria-live="polite">Showing
+                {{startIndex}} to
+                {{endIndex}} of {{totalUserCount}}
+                entries
+              </div> 
+            </div>
+             <!-- Pagination -->
+          <div class="col-sm-12 col-md-5">
+            <div class="text-md-right float-md-right pagination-rounded">
+<ngb-pagination [(page)]="PageIndex" [pageSize]="pageSize"
+[collectionSize]="totalUserCount" (pageChange)="pageChange($event)">
+<ng-template ngbPaginationPrevious>Prev</ng-template>
+<ng-template ngbPaginationNext>Next</ng-template>
+<ng-template ngbPaginationNumber let-p>{{p}}
+
+</ng-template>
+</ngb-pagination>
+            </div>
+          </div>
+          <!-- End Pagination -->
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+

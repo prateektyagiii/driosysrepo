@@ -1,0 +1,75 @@
+CREATE OR REPLACE FUNCTION "DSR_APP"."FN_DSR_EMAIL_SELECTBYID"(p_id integer DEFAULT 0)
+ RETURNS TABLE("EmailId" integer, "From" character varying, "To" character varying, "Message" character varying, "Body" character varying, "Subject" character varying, "CreatedBy" character varying, "CreatedDate" timestamp without time zone, "UpdateBy" character varying, "UpdatedDate" timestamp without time zone, "IsActive" boolean, "IsDeleted" boolean)
+ LANGUAGE plpgsql
+AS $function$
+	begin
+	return QUERY
+	select
+	dsr."EmailId",
+	dsr."From",
+	dsr."To",
+	dsr."Message",
+	dsr."Body",
+	dsr."Subject",
+	dsr."CreatedBy",
+	dsr."CreatedDate",
+	dsr."UpdateBy",
+	dsr."UpdatedDate",
+	dsr."IsActive",
+	dsr."IsDeleted"
+from
+	outreachdb."DSR_APP"."DSR_EMAIL" dsr
+where
+	dsr."EmailId" = p_id and dsr."IsDeleted" = false ;
+
+end;
+
+$function$
+;
+
+CREATE OR REPLACE FUNCTION "DSR_APP"."FN_DSR_INSERT"(p_name character varying DEFAULT NULL::character varying, p_from character varying DEFAULT NULL::character varying, p_to character varying DEFAULT NULL::character varying, p_subject character varying DEFAULT NULL::character varying, p_body character varying DEFAULT NULL::character varying, p_emaildate timestamp with time zone DEFAULT NULL::timestamp with time zone, p_day character varying DEFAULT NULL::character varying)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $function$
+declare CurrentDateUtc timestamp = timezone('UTC',
+now());
+
+begin
+
+insert
+	into
+		"DSR_APP"."DSR_EMAIL" (
+		"Name" ,
+	"From",
+		"To",
+		"Subject",
+	    "Body" ,
+	   "EmailDate",
+	    "Day",
+		"CreatedBy" ,
+		"CreatedDate" ,
+		"UpdateBy" ,
+		"UpdatedDate" ,
+		"IsActive" ,
+		"IsDeleted"
+		)
+values(
+p_name,
+p_from,
+	p_to,
+	p_subject,
+p_body ,
+p_emaildate,
+    p_day,
+	'',
+	CurrentDateUtc,
+	'' ,
+	CurrentDateUtc,
+	true ,
+	false);
+
+return 1;
+end;
+
+$function$
+;
